@@ -1,0 +1,1 @@
+add_test(brute_force_search_test.cpp)
