@@ -1,1 +1,1 @@
-add_test(min_queue_test.cpp)
+add_test(min_queue_test)
