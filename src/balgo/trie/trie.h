@@ -45,19 +45,34 @@ namespace balgo {
 template<typename Char, typename Value, typename NodePtr = uint32_t>
 class Trie {
  public:
+  Trie() : not_built_(true) { }
   virtual ~Trie() { }
 
-  void Insert(const Char* begin, const Char* end, const Value &value) {
-    DoInsert(begin, end, value);
+  bool Insert(const Char* begin, const Char* end, const Value &value) {
+    if (not_built_) DoInsert(begin, end, value);
+    return not_built_;
   }
 
-  void Insert(const Char* begin, std::size_t length, const Value &value) {
-    DoInsert(begin, begin + length, value);
+  bool Insert(const Char* begin, std::size_t length, const Value &value) {
+    if (not_built_) DoInsert(begin, begin + length, value);
+    return not_built_;
   }
 
-  void Insert(const Char* begin, const Value &value) {
-    std::size_t length = std::char_traits<Char>::length(begin);
-    DoInsert(begin, begin + length, value);
+  bool Insert(const Char* begin, const Value &value) {
+    if (not_built_) {
+      std::size_t length = std::char_traits<Char>::length(begin);
+      DoInsert(begin, begin + length, value);
+    }
+    return not_built_;
+  }
+
+  bool Build() {
+    if (not_built_) {
+      not_built_ = false;
+      DoBuild();
+      return true;
+    }
+    return false;
   }
 
   bool Match(const Char* begin, const Char* end, Value* value = NULL) const {
@@ -127,8 +142,10 @@ class Trie {
     return MatchPrefix<DefaultValues>(begin, begin + length, NULL, false);
   }
 
-  virtual void Build(bool sort = true) = 0;
-  virtual void Clear() = 0;
+  void Clear() {
+    not_built_ = true;
+    DoClear();
+  }
 
   virtual std::size_t NodeSize() const = 0;
   virtual std::size_t NumNodes() const = 0;
@@ -146,13 +163,18 @@ class Trie {
  protected:
   typedef std::vector<Value> DefaultValues;
 
-  virtual void DoInsert(const Char* begin, const Char* end, const Value &value) = 0;
-
   virtual NodePtr Root() const = 0;
   virtual NodePtr Child(NodePtr parent, Char label) const = 0;
   virtual bool IsNull(NodePtr p) const = 0;
   virtual bool IsFinal(NodePtr p) const = 0;
   virtual const Value* GetValue(NodePtr p) const = 0;
+
+  virtual void DoBuild(bool sort = true) = 0;
+  virtual void DoInsert(const Char* begin, const Char* end, const Value &value) = 0;
+  virtual void DoClear() = 0;
+
+ private:
+  bool not_built_;  ///< This Trie has not been built yet
 };
 
 }  // namespace balgo

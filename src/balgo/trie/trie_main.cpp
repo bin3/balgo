@@ -63,12 +63,12 @@ void Demo(balgo::Trie<char, size_t>& trie) {
 }
 
 int main(int argc, char **argv) {
-	std::cout << "------" << argv[0] << "------" << std::endl;
+  std::cout << "------" << argv[0] << "------" << std::endl;
 
-  balgo::DaTrie<char, size_t> datrie;
-  balgo::TernaryTrie<char, size_t> tetrie;
-  Demo(datrie);
-  Demo(tetrie);
+  balgo::DaTrie<char, size_t> da_trie;
+  balgo::TernaryTrie<char, size_t> te_trie;
+  Demo(da_trie);
+  Demo(te_trie);
 
   return 0;
 }

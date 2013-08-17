@@ -28,6 +28,9 @@
 #define BALGO_TRIE_DA_TRIE_H_
 
 #include <stdint.h>
+#include <algorithm>
+#include <string>
+#include <vector>
 
 #include "trie_traits.h"
 #include "trie.h"
@@ -37,8 +40,7 @@ namespace balgo {
 /**
  * @brief Double-array Trie
  */
-template<typename Char = char, typename Value = uint32_t, typename NodePtr = uint32_t,
-    typename Size = uint32_t>
+template<typename Char = char, typename Value = uint32_t, typename NodePtr = uint32_t>
 class DaTrie : public Trie<Char, Value, NodePtr> {
  public:
   typedef typename TrieTraits<Char>::UChar UChar;
@@ -71,16 +73,17 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
       return ss.str();
     }
   };
+
   struct Key {
     const Char* begin;
-    size_t length;
-    Key(const Char* beg, size_t len)
+    std::size_t length;
+    Key(const Char* beg, std::size_t len)
         : begin(beg),
           length(len) {
     }
     bool operator<(const Key& rhs) const {
-      Size minlen = std::min(length, rhs.length);
-      for (size_t i = 0; i < minlen; ++i) {
+      std::size_t minlen = std::min(length, rhs.length);
+      for (std::size_t i = 0; i < minlen; ++i) {
         if (Index(begin[i]) < Index(rhs.begin[i])) {
           return true;
         } else if (Index(begin[i]) > Index(rhs.begin[i])) {
@@ -90,8 +93,8 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
       return length < rhs.length;
     }
     bool operator==(const Key& rhs) const {
-      Size minlen = std::min(length, rhs.length);
-      for (size_t i = 0; i < minlen; ++i) {
+      std::size_t minlen = std::min(length, rhs.length);
+      for (std::size_t i = 0; i < minlen; ++i) {
         if (Index(begin[i]) != Index(rhs.begin[i])) {
           return false;
         }
@@ -99,9 +102,10 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
       return length == rhs.length;
     }
   };
+
   class KeyIdLess {
    public:
-    KeyIdLess(KeyContainer& keys)
+    explicit KeyIdLess(KeyContainer& keys)
         : keys_(keys) {
     }
     bool operator()(const NodePtr lhs, const NodePtr rhs) const {
@@ -110,9 +114,10 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
    private:
     KeyContainer& keys_;
   };
+
   class KeyIdEqual {
    public:
-    KeyIdEqual(KeyContainer& keys)
+    explicit KeyIdEqual(KeyContainer& keys)
         : keys_(keys) {
     }
     bool operator()(const NodePtr lhs, const NodePtr rhs) const {
@@ -133,26 +138,41 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     }
   };
 
-  virtual ~DaTrie() { }
-
   static NodePtr Null() {
     return 0;
   }
-  virtual bool IsNull(NodePtr p) const {
-    return p == Null();
-  }
+
   static Char NullChar() {
     return 0;
   }
-  virtual NodePtr Root() const {
-    return 1;
-  }
 
-  virtual size_t NodeSize() const {
+  virtual ~DaTrie() { }
+
+  virtual std::size_t NodeSize() const {
     return sizeof(Node);
   }
+
+  virtual std::size_t NumNodes() const {
+    return units_.size();
+  }
+
   virtual std::string Name() const {
     return "DaTrie";
+  }
+
+  std::string ToString() const {
+    std::stringstream ss;
+    for (std::size_t i = Root(); i < units_.size(); ++i) {
+      if (units_[i].base != Null()) {
+        ss << "[" << i << "] " << units_[i].ToString() << "\n";
+      }
+    }
+    return ss.str();
+  }
+
+ protected:
+  virtual NodePtr Root() const {
+    return 1;
   }
 
   NodePtr Child(const NodePtr parent, Char label) const {
@@ -162,36 +182,15 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     }
     return Null();
   }
-  NodePtr FirstChild(const NodePtr parent) const {
-    if (units_[parent].child_label != NullChar()) {
-      return units_[parent].base + Index(units_[parent].child_label);
-    }
-    return Null();
+
+  virtual bool IsNull(NodePtr p) const {
+    return p == Null();
   }
-  NodePtr Sibling(const NodePtr node) const {
-    if (units_[node].sibling == 0) {
-      return Null();
-    }
-    return node + units_[node].sibling;
-  }
-  NodePtr Fail(const NodePtr node) const {
-    return units_[node].fail;
-  }
-  void SetFail(NodePtr node, const NodePtr fail) {
-    units_[node].fail = fail;
-  }
+
   virtual bool IsFinal(const NodePtr node) const {
     return units_[units_[node].base].check == node;
   }
-  NodePtr Report(const NodePtr node) const {
-    return units_[node].report;
-  }
-  void SetReport(const NodePtr node, NodePtr report) {
-    units_[node].report = report;
-  }
-  Char Label(const NodePtr node) const {
-    return units_[node].label;
-  }
+
   virtual const Value* GetValue(NodePtr p) const {
     if (IsFinal(p)) {
       NodePtr kid = units_[units_[p].base].GetValueIndex();
@@ -200,21 +199,17 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     return NULL;
   }
 
-  NodePtr AddChild(NodePtr parent, Char value) {
-    return Null();
-  }
-
   virtual void DoInsert(const Char* begin, const Char* end, const Value &value) {
     if (begin != end) {
-      size_t length = end - begin;
+      std::size_t length = end - begin;
       keys_.push_back(Key(begin, length));
       values_.push_back(value);
     }
   }
 
-  virtual void Build(bool sort = true) {
+  virtual void DoBuild(bool sort = true) {
     kids_.clear();
-    for (size_t i = 0; i < keys_.size(); ++i) {
+    for (std::size_t i = 0; i < keys_.size(); ++i) {
       kids_.push_back(i);
     }
     if (sort) {
@@ -233,19 +228,14 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
 
     Unit(Root()).check = Root();
 
-    Build(0, Root(), 0, kids_.size());
+    BuildNode(0, Root(), 0, kids_.size());
 
     // release auxes_
     KeyContainer().swap(keys_);
     AuxContainer().swap(auxes_);
   }
-  std::string NodeString(NodePtr node) const {
-    return units_[node].ToString();
-  }
-  size_t NumNodes() const {
-    return units_.size();
-  }
-  void Clear() {
+
+  virtual void DoClear() {
     units_.clear();
     values_.clear();
     kids_.clear();
@@ -253,26 +243,13 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     auxes_.clear();
   }
 
-  std::string ToString() const {
-    std::stringstream ss;
-    for (size_t i = Root(); i < units_.size(); ++i) {
-      if (units_[i].base != Null()) {
-        ss << "[" << i << "] " << units_[i].ToString() << "\n";
-      }
-    }
-    return ss.str();
-  }
  private:
-  NodeContainer units_;
-  ValueContainer values_;
-  KidContainer kids_;
-
-  KeyContainer keys_;
-  NodePtr free_head_;
-  AuxContainer auxes_;
-
   static UChar Index(Char label) {
     return static_cast<UChar>(label);
+  }
+
+  Char Label(const NodePtr node) const {
+    return units_[node].label;
   }
 
   Node& Unit(const NodePtr index) {
@@ -282,14 +259,14 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     return units_[index];
   }
 
-  void Resize(size_t size) {
+  void Resize(std::size_t size) {
     if (size <= units_.size())
       return;
 
     units_.resize(size);
-    size_t old_size = auxes_.size();
+    std::size_t old_size = auxes_.size();
     auxes_.resize(size);
-    for (size_t i = old_size + 1; i < auxes_.size(); ++i) {
+    for (std::size_t i = old_size + 1; i < auxes_.size(); ++i) {
       auxes_[i - 1].next = i;
       auxes_[i].prev = i - 1;
     }
@@ -308,14 +285,14 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     auxes_[aux.next].prev = aux.prev;
   }
 
-  Char Label(NodePtr pid, size_t depth) {
+  Char Label(NodePtr pid, std::size_t depth) {
     if (depth < keys_[pid].length) {
       return keys_[pid].begin[depth];
     }
     return NullChar();
   }
 
-  void Build(Size depth, NodePtr parent, NodePtr begin, NodePtr end) {
+  void BuildNode(std::size_t depth, NodePtr parent, NodePtr begin, NodePtr end) {
     if (begin == end)
       return;
 
@@ -340,9 +317,9 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
       units_[child].SetValueIndex(kids_[begin]);  // store key id
     }
 
-    for (size_t i = final; i < labels.size(); ++i) {
+    for (std::size_t i = final; i < labels.size(); ++i) {
       NodePtr child = base + Index(labels[i]);
-      Build(depth + 1, child, guards[i], guards[i + 1]);
+      BuildNode(depth + 1, child, guards[i], guards[i + 1]);
     }
   }
 
@@ -352,7 +329,7 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     while (free_idx != free_head_) {
       NodePtr base = free_idx - Index(labels[0]);
       bool fetched = true;
-      for (size_t i = 0; i < labels.size(); ++i) {
+      for (std::size_t i = 0; i < labels.size(); ++i) {
         NodePtr p = base + Index(labels[i]);
         if (p >= NumNodes()) {
           break;
@@ -368,18 +345,31 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
     }
     return NumNodes() - Index(labels[0]);
   }
+
   void InsertUnits(NodePtr parent, NodePtr base, const std::vector<Char>& labels) {
     if (!labels.size())
       return;
     NodePtr max_idx = base + Index(labels.back());
     Resize(max_idx + 1);
-    for (size_t i = 0; i < labels.size(); ++i) {
+    for (std::size_t i = 0; i < labels.size(); ++i) {
       NodePtr idx = base + Index(labels[i]);
       Node& unit = Unit(idx);
       Reserve(idx);
       unit.check = parent;
     }
   }
+
+  std::string NodeString(NodePtr node) const {
+    return units_[node].ToString();
+  }
+
+  NodeContainer units_;
+  ValueContainer values_;
+  KidContainer kids_;
+
+  KeyContainer keys_;
+  NodePtr free_head_;
+  AuxContainer auxes_;
 };
 
 }  // namespace balgo

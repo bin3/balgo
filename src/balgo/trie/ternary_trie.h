@@ -27,11 +27,12 @@
 #define BALGO_TRIE_TERNARY_TRIE_H_
 
 #include <stdint.h>
+#include <algorithm>
+#include <deque>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <deque>
-#include <algorithm>
 
 #include "trie_traits.h"
 #include "trie.h"
@@ -42,13 +43,19 @@ namespace balgo {
  * @brief Ternary Trie
  */
 template<typename Char = char, typename Value = uint32_t, typename NodePtr = uint32_t,
-    typename Size = uint32_t, typename Compare = std::less<Char> >
+    typename Compare = std::less<Char> >
 class TernaryTrie : public Trie<Char, Value, NodePtr> {
  public:
   typedef typename TrieTraits<Char>::UChar UChar;
 
+  struct Node;
+  struct AuxUnit;
   struct Key;
-  typedef std::deque<Key> KeyContainer;
+  typedef std::vector<Node> NodeContainer;
+  typedef std::vector<AuxUnit> AuxContainer;
+  typedef std::vector<Key> KeyContainer;
+  typedef std::vector<NodePtr> KidContainer;
+  typedef std::vector<Value> ValueContainer;
 
   struct Node {
     NodePtr child;
@@ -81,8 +88,8 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
 
   struct Key {
     const Char* ptr;
-    Size length;
-    Key(const Char* p, Size l)
+    std::size_t length;
+    Key(const Char* p, std::size_t l)
         : ptr(p),
           length(l) {
     }
@@ -90,8 +97,8 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
       static Compare s_cmp;
       const Char* lp = ptr;
       const Char* rp = rhs.ptr;
-      Size minlen = std::min(length, rhs.length);
-      for (Size i = 0; i < minlen; ++i) {
+      std::size_t minlen = std::min(length, rhs.length);
+      for (std::size_t i = 0; i < minlen; ++i) {
         if (s_cmp(lp[i], rp[i])) {
           return true;
         } else if (s_cmp(rp[i], lp[i])) {
@@ -104,7 +111,7 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
       if (length != rhs.length) {
         return false;
       }
-      for (Size i = 0; i < length; ++i) {
+      for (std::size_t i = 0; i < length; ++i) {
         if (ptr[i] != rhs.ptr[i]) {
           return false;
         }
@@ -121,7 +128,7 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
   };
   class KeyIdLess {
    public:
-    KeyIdLess(KeyContainer& p)
+    explicit KeyIdLess(KeyContainer& p)
         : keys_(p) {
     }
     bool operator()(const NodePtr lhs, const NodePtr rhs) const {
@@ -132,7 +139,7 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
   };
   class KeyIdEqual {
    public:
-    KeyIdEqual(KeyContainer& keys)
+    explicit KeyIdEqual(KeyContainer& keys)
         : keys_(keys) {
     }
     bool operator()(const NodePtr lhs, const NodePtr rhs) const {
@@ -142,16 +149,29 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
     KeyContainer& keys_;
   };
 
-  static Char NullChar() {
-    return 0;
-  }
-  static NodePtr Null() {
-    return 0;
-  }
-
-  TernaryTrie() { }
   virtual ~TernaryTrie() { }
 
+  virtual std::size_t NodeSize() const {
+    return sizeof(Node);
+  }
+
+  virtual std::size_t NumNodes() const {
+    return units_.size();
+  }
+
+  virtual std::string Name() const {
+    return "TernaryTrie";
+  }
+
+  virtual std::string ToString() const {
+    std::stringstream ss;
+    for (std::size_t i = Root(); i < units_.size(); ++i) {
+      ss << "[" << i << "] " << units_[i].ToString() << "\n";
+    }
+    return ss.str();
+  }
+
+ protected:
   virtual NodePtr Root() const {
     return 1;
   }
@@ -201,14 +221,14 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
     }
   }
 
-  virtual void Build(bool sort = true) {
+  virtual void DoBuild(bool sort = true) {
     kids_.clear();
-    for (Size i = 0; i < keys_.size(); ++i) {
+    for (std::size_t i = 0; i < keys_.size(); ++i) {
       kids_.push_back(i);
     }
     if (sort) {
       std::sort(kids_.begin(), kids_.end(), KeyIdLess(keys_));
-      typename std::deque<NodePtr>::iterator new_end = std::unique(kids_.begin(), kids_.end(),
+      typename KidContainer::iterator new_end = std::unique(kids_.begin(), kids_.end(),
                                                                    KeyIdEqual(keys_));
       kids_.resize(new_end - kids_.begin());
     }
@@ -219,75 +239,46 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
       units_.push_back(Node());
     }
 
-    DoBuild(0, Root(), 0, kids_.size());
+    BuildNode(0, Root(), 0, kids_.size());
 
     // release keys_
     KeyContainer().swap(keys_);
   }
 
-  virtual void Clear() {
+  virtual void DoClear() {
     units_.clear();
     values_.clear();
     kids_.clear();
     keys_.clear();
   }
 
-  virtual std::size_t NodeSize() const {
-    return sizeof(Node);
+ private:
+  static Char NullChar() {
+    return 0;
   }
 
-  virtual std::size_t NumNodes() const {
-    return units_.size();
+  static NodePtr Null() {
+    return 0;
   }
 
-  virtual std::string Name() const {
-    return "TernaryTrie";
-  }
-
-  virtual std::string ToString() const {
+  // debug
+  template<typename T>
+  static std::string HexString(T x) {
     std::stringstream ss;
-    for (std::size_t i = Root(); i < units_.size(); ++i) {
-      ss << "[" << i << "] " << units_[i].ToString() << "\n";
-    }
+    ss << std::hex << static_cast<uint64_t>(x);
     return ss.str();
   }
 
-  std::string NodeString(const NodePtr node) const {
-    return units_[node].ToString();
+  static std::string HexString(Char x) {
+    return HexString(static_cast<UChar>(x));
   }
-
-  NodePtr FirstChild(const NodePtr parent) const {
-    if (!HasRealChild(parent)) {
-      return Null();
-    }
-    return units_[parent].child + units_[parent].final;
-  }
-
-  NodePtr Sibling(const NodePtr node) const {
-    return units_[node].sibling ? (node + 1) : Null();
-  }
-
-  Char Label(const NodePtr node) const {
-    return units_[node].label;
-  }
-
-  NodePtr AddChild(NodePtr parent, Char value) {
-    return Null();
-  }
-
- private:
-  Compare cmp_;
-  std::deque<Node> units_;
-  std::deque<Value> values_;
-  std::deque<NodePtr> kids_;
-  KeyContainer keys_;    // Released at the end of Build
 
   bool HasRealChild(const NodePtr parent) const {
     return (units_[parent].nchild > 1)
         || (units_[parent].nchild == 1 && !units_[parent].final);
   }
 
-  void DoBuild(Size depth, NodePtr parent, NodePtr begin, NodePtr end) {
+  void BuildNode(std::size_t depth, NodePtr parent, NodePtr begin, NodePtr end) {
     if (begin >= end)
       return;
 
@@ -321,17 +312,19 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
 
     for (NodePtr i = units_[parent].final; i < units_[parent].nchild; ++i) {
       NodePtr child = units_[parent].child + i;
-      DoBuild(depth + 1, child, guards[i], guards[i + 1]);
+      BuildNode(depth + 1, child, guards[i], guards[i + 1]);
     }
   }
 
-  // debug
-  template<typename T>
-  static std::string HexString(T x) {
-    std::stringstream ss;
-    ss << std::hex << static_cast<uint64_t>(x);
-    return ss.str();
+  Char Label(const NodePtr node) const {
+    return units_[node].label;
   }
+
+  Compare cmp_;
+  NodeContainer units_;
+  ValueContainer values_;
+  KidContainer kids_;
+  KeyContainer keys_;    // Released at the end of Build
 };
 
 }  // namespace balgo
