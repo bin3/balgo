@@ -45,6 +45,8 @@ namespace balgo {
 template<typename Char, typename Value, typename NodePtr = uint32_t>
 class Trie {
  public:
+  typedef NodePtr NodePtrType;
+
   Trie() : not_built_(true) { }
   virtual ~Trie() { }
 

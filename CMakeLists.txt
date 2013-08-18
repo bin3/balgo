@@ -53,6 +53,7 @@ link_directories(
 
 #self-defined functions
 
+# Add a library
 function(add_lib name srcstr)
 	message(STATUS "[add_lib] name=${name}, srcstr=${srcstr}, depstr=${depstr}")
   string(REGEX MATCHALL "[^ ;]+" srcs "${srcstr}")
@@ -63,6 +64,7 @@ function(add_lib name srcstr)
 	target_link_libraries(${name} ${deps})
 endfunction()	
 
+# Add a binary
 function(add_bin name)
   message(STATUS "[add_bin] ARGC=${ARGC}, ARGV=${ARGV}")
   add_executable(${name} ${name})
@@ -76,10 +78,11 @@ function(add_bin name)
   endif()
 endfunction()	
 
-# Add a unittest, a optional argument can specify the dependcies
+# Add a unittest
+# A optional argument can specify the dependcies
 # Example1: add_test(foo_test)
-# Example2: add_test(foo_test "boost_system")
-# Example3: add_test(foo_test "boost_system boost_timer")
+# Example2: add_test(foo_test "glog")
+# Example3: add_test(foo_test "gtest glog")
 function(add_test name)
   message(STATUS "[add_test] name=${name}, ARGC=${ARGC}, ARGV=${ARGV}")
   set(libs gtest gtest_main)
