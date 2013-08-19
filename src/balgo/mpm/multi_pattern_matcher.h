@@ -86,7 +86,7 @@ class MultiPatternMatcher {
     return false;
   }
 
-  virtual std::size_t Match(const Char* begin, const Char* end, MatchFunc& func) const {
+  std::size_t Match(const Char* begin, const Char* end, MatchFunc& func) const {
     return DoMatch(begin, end, func);
   }
 
@@ -115,11 +115,11 @@ class MultiPatternMatcher {
 
   std::size_t Match(const Char* begin, const Char* end) const {
     static MatchFunc s_func;
-    return Match(begin, end);
+    return DoMatch(begin, end, s_func);
   }
 
   std::size_t Match(const Char* begin, std::size_t length) const {
-    return Match(begin, begin + length, MatchFunc());
+    return Match(begin, begin + length);
   }
 
   std::size_t Match(const Char* begin) const {

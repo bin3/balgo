@@ -27,10 +27,27 @@
 #include <gtest/gtest.h>
 
 #include "aho_corasick.h"
+#include "mpm_test_common.h"
 
 namespace balgo {
 
 TEST(AhoCorasick, Match) {
+  AhoCorasick<char, size_t> mpm;
+  TestMatch(mpm);
+
+  std::vector<size_t> expected;
+  expected.push_back(0);
+  expected.push_back(0);
+  expected.push_back(2);
+  expected.push_back(1);
+  expected.push_back(4);
+  expected.push_back(3);
+  std::vector<size_t> values;
+  EXPECT_EQ(6U, mpm.Match("ababcdef", &values));
+  EXPECT_EQ(expected, values) << "mpm.ToString: \n" << mpm.ToString();
+}
+
+TEST(AhoCorasick, Match2) {
   AhoCorasick<char, size_t> ac;
   ac.Build();
   EXPECT_EQ(0U, ac.Match("abc"));

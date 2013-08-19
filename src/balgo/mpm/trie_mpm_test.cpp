@@ -33,6 +33,17 @@ namespace balgo {
 TEST(TrieMpm, Match) {
   TrieMpm<char, size_t> mpm;
   TestMatch(mpm);
+
+  std::vector<size_t> expected;
+  expected.push_back(0);
+  expected.push_back(0);
+  expected.push_back(2);
+  expected.push_back(3);
+  expected.push_back(1);
+  expected.push_back(4);
+  std::vector<size_t> values;
+  EXPECT_EQ(6U, mpm.Match("ababcdef", &values));
+  EXPECT_EQ(expected, values) << "mpm.ToString: \n" << mpm.ToString();
 }
 
 }  // namespace balgo

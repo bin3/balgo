@@ -143,7 +143,7 @@ class Trie {
       return MatchPrefix(begin, end, func);
     } else {
       static MatchFunc s_func;
-      return MatchPrefix(begin, end);
+      return MatchPrefix(begin, end, s_func);
     }
   }
 

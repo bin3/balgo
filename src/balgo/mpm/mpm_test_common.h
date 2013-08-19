@@ -45,17 +45,7 @@ static void TestMatch(MultiPatternMatcher<char, size_t>& mpm) {
 
   EXPECT_EQ(1U, mpm.Match("a"));
   EXPECT_EQ(3U, mpm.Match("abc"));
-
-  std::vector<size_t> expected;
-  expected.push_back(0);
-  expected.push_back(0);
-  expected.push_back(2);
-  expected.push_back(1);
-  expected.push_back(4);
-  expected.push_back(3);
-  std::vector<size_t> values;
-  EXPECT_EQ(6U, mpm.Match("ababcdef", &values));
-  EXPECT_EQ(expected, values) << "mpm.ToString: \n" << mpm.ToString();
+  EXPECT_EQ(6U, mpm.Match("ababcdef"));
 }
 
 }  // namespace balgo
