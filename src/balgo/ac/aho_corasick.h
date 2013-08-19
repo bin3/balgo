@@ -110,19 +110,15 @@ class AhoCorasick {
       if (nxt != trie_.Null()) {
         cur = nxt;
         size_t pos = std::distance(begin, it);
-        const Value* value = trie_.GetValue(cur);
-        if (value) {
-          func(*value, pos);
-          ++cnt;
-        }
         NodePtr report = cur;
-        while ((report = trie_.Report(report)) != trie_.Null()) {
-          value = trie_.GetValue(report);
+        do {
+          const Value* value = trie_.GetValue(report);
           if (value) {
-            func(*value, pos);
+            func(*(trie_.GetValue(report)), pos);
             ++cnt;
           }
-        }
+          report = trie_.Report(report);
+        } while (report != trie_.Null());
       }
     }
     return cnt;
@@ -163,15 +159,19 @@ class AhoCorasick {
   std::size_t NodeSize() const {
     return trie_.NodeSize();
   }
+
   std::size_t NumNodes() const {
     return trie_.NumNodes();
   }
+
   std::string Name() const {
     return "AhoCorasick";
   }
+
   std::string ToString() const {
     return trie_.ToString();
   }
+
   std::string StatsString() const {
     std::stringstream ss;
     ss << "nodes=" << NumNodes() << ", node_size=" << NodeSize() << ", size="
