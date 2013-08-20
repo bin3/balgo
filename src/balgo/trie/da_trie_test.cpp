@@ -24,7 +24,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <boost/range.hpp>
 
 #include "trie_test_common.h"
 #include "da_trie.h"

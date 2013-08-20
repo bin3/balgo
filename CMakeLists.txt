@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 
 project(balgo CXX)
 
-set(CMAKE_PREFIX_PATH "../third_party")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
-
 set(root_dir ${PROJECT_SOURCE_DIR})
 set(src_dir ${root_dir}/src)
 set(build_dir ${root_dir}/build)
@@ -57,11 +54,16 @@ link_directories(
 function(add_lib name srcstr)
 	message(STATUS "[add_lib] name=${name}, srcstr=${srcstr}, depstr=${depstr}")
   string(REGEX MATCHALL "[^ ;]+" srcs "${srcstr}")
-  string(REGEX MATCHALL "[^ ;]+" deps "${depstr}")
 	message(STATUS "srcs=${srcs}")
-	message(STATUS "deps=${deps}")
 	add_library(${name} ${srcs})
-	target_link_libraries(${name} ${deps})
+  if (${ARGC} GREATER 2)
+    string(REGEX MATCHALL "[^ ;]+" deps "${ARGV2}")
+    list(LENGTH ${deps} len)
+    if (${len} GREATER 0)
+      message(STATUS "${len} deps: ${deps}")
+      target_link_libraries(${name} ${deps})
+    endif()
+  endif()
 endfunction()	
 
 # Add a binary
@@ -79,7 +81,7 @@ function(add_bin name)
 endfunction()	
 
 # Add a unittest
-# A optional argument can specify the dependcies
+# A optional argument can specify the dependencies
 # Example1: add_test(foo_test)
 # Example2: add_test(foo_test "glog")
 # Example3: add_test(foo_test "gtest glog")
