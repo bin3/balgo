@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(balgo CXX)
+project(cmk_proj CXX)
 
 set(root_dir ${PROJECT_SOURCE_DIR})
 set(src_dir ${root_dir}/src)
@@ -28,7 +28,8 @@ set(CXX_FLAGS
  -Wwrite-strings
  #-march=native
  #-MMD
- #-std=c++0x
+ -std=c++0x
+ -fopenmp
  )
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
@@ -51,6 +52,9 @@ link_directories(
 #self-defined functions
 
 # Add a library
+# An optional argument can specify the dependencies
+# Example1: add_lib(foo "foo.cpp util.cpp")
+# Example2: add_lib(foo "foo.cpp util.cpp" "bar glog")
 function(add_lib name srcstr)
 	message(STATUS "[add_lib] name=${name}, srcstr=${srcstr}, depstr=${depstr}")
   string(REGEX MATCHALL "[^ ;]+" srcs "${srcstr}")
@@ -58,7 +62,7 @@ function(add_lib name srcstr)
 	add_library(${name} ${srcs})
   if (${ARGC} GREATER 2)
     string(REGEX MATCHALL "[^ ;]+" deps "${ARGV2}")
-    list(LENGTH ${deps} len)
+    list(LENGTH deps len)
     if (${len} GREATER 0)
       message(STATUS "${len} deps: ${deps}")
       target_link_libraries(${name} ${deps})
@@ -67,12 +71,16 @@ function(add_lib name srcstr)
 endfunction()	
 
 # Add a binary
+# An optional argument can specify the dependencies
+# Example1: add_bin(foo_main)
+# Example2: add_bin(foo_main "glog")
+# Example3: add_bin(foo_main "protobuf glog")
 function(add_bin name)
   message(STATUS "[add_bin] ARGC=${ARGC}, ARGV=${ARGV}")
   add_executable(${name} ${name})
   if (${ARGC} GREATER 1)
     string(REGEX MATCHALL "[^ ;]+" deps "${ARGV1}")
-    list(LENGTH ${deps} len)
+    list(LENGTH deps len)
     if (${len} GREATER 0)
       message(STATUS "${len} deps: ${deps}")
       target_link_libraries(${name} ${deps})
@@ -81,10 +89,10 @@ function(add_bin name)
 endfunction()	
 
 # Add a unittest
-# A optional argument can specify the dependencies
+# An optional argument can specify the dependencies
 # Example1: add_test(foo_test)
 # Example2: add_test(foo_test "glog")
-# Example3: add_test(foo_test "gtest glog")
+# Example3: add_test(foo_test "protobuf glog")
 function(add_test name)
   message(STATUS "[add_test] name=${name}, ARGC=${ARGC}, ARGV=${ARGV}")
   set(libs gtest gtest_main)
