@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -201,7 +202,7 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
 
   virtual void DoInsert(const Char* begin, const Char* end, const Value &value) {
     if (begin != end) {
-      std::size_t length = end - begin;
+      std::size_t length = static_cast<std::size_t>(std::distance(begin, end));
       keys_.push_back(Key(begin, length));
       values_.push_back(value);
     }
@@ -210,13 +211,14 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
   virtual void DoBuild(bool sort = true) {
     kids_.clear();
     for (std::size_t i = 0; i < keys_.size(); ++i) {
-      kids_.push_back(i);
+      kids_.push_back(static_cast<NodePtr>(i));
     }
     if (sort) {
       std::sort(kids_.begin(), kids_.end(), KeyIdLess(keys_));
       typename KidContainer::iterator new_end = std::unique(kids_.begin(), kids_.end(),
                                                             KeyIdEqual(keys_));
-      kids_.resize(new_end - kids_.begin());
+      std::size_t new_size = static_cast<std::size_t>(std::distance(kids_.begin(), new_end));
+      kids_.resize(new_size);
     }
     // init auxes_
     static const NodePtr kFreeHead = (1 << (sizeof(UChar) * 8)) + Root();
@@ -228,7 +230,7 @@ class DaTrie : public Trie<Char, Value, NodePtr> {
 
     Unit(Root()).check = Root();
 
-    BuildNode(0, Root(), 0, kids_.size());
+    BuildNode(0, Root(), 0, static_cast<NodePtr>(kids_.size()));
 
     // release auxes_
     KeyContainer().swap(keys_);

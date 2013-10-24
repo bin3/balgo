@@ -30,12 +30,11 @@
 namespace balgo {
 
 TEST(UIntTraits, Traits) {
-  EXPECT_EQ(1, sizeof(UIntTraits<1>::UInt));
-  EXPECT_EQ(2, sizeof(UIntTraits<2>::UInt));
-  EXPECT_EQ(4, sizeof(UIntTraits<4>::UInt));
-  EXPECT_EQ(8, sizeof(UIntTraits<8>::UInt));
-  EXPECT_EQ(4, sizeof(UIntTraits<0>::UInt));
-  EXPECT_EQ(4, sizeof(UIntTraits<3>::UInt));
+  EXPECT_EQ(1U, sizeof(UIntTraits<1>::UInt));
+  EXPECT_EQ(2U, sizeof(UIntTraits<2>::UInt));
+  EXPECT_EQ(4U, sizeof(UIntTraits<4>::UInt));
+  EXPECT_EQ(8U, sizeof(UIntTraits<8>::UInt));
+  EXPECT_EQ(4U, sizeof(UIntTraits<0>::UInt));
 }
 
 TEST(TrieTraits, Traits) {

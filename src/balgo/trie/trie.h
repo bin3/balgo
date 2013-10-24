@@ -185,7 +185,7 @@ class Trie {
   virtual std::string StatsString() const {
     std::stringstream ss;
     ss << "nodes=" << NumNodes() << ", node_size=" << NodeSize() << ", size="
-        << static_cast<float>(NodeSize()) * NumNodes() / (1 << 20) << "M";
+        << static_cast<double>(NodeSize()) * NumNodes() / (1 << 20) << "M";
     return ss.str();
   }
 

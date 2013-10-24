@@ -98,7 +98,7 @@ class AhoCorasick : public MultiPatternMatcher<Char, Value> {
       }
       if (nxt != trie_.Null()) {
         cur = nxt;
-        std::size_t pos = std::distance(begin, it);
+        std::size_t pos = static_cast<std::size_t>(std::distance(begin, it));
         NodePtr report = cur;
         do {
           const Value* value = trie_.GetValue(report);

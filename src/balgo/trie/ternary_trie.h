@@ -215,7 +215,7 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
 
   virtual void DoInsert(const Char* begin, const Char* end, const Value &value) {
     if (begin != end) {
-      std::size_t length = end - begin;
+      std::size_t length = static_cast<std::size_t>(std::distance(begin, end));
       keys_.push_back(Key(begin, length));
       values_.push_back(value);
     }
@@ -230,7 +230,8 @@ class TernaryTrie : public Trie<Char, Value, NodePtr> {
       std::sort(kids_.begin(), kids_.end(), KeyIdLess(keys_));
       typename KidContainer::iterator new_end = std::unique(kids_.begin(), kids_.end(),
                                                                    KeyIdEqual(keys_));
-      kids_.resize(new_end - kids_.begin());
+      std::size_t new_size = static_cast<std::size_t>(std::distance(kids_.begin(), new_end));
+      kids_.resize(new_size);
     }
 
     // init m_root

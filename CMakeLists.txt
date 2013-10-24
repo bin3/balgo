@@ -14,10 +14,8 @@ endif()
 
 set(CXX_FLAGS
  -g
- #-DVALGRIND
  -Wall
  -Wextra
- #-m32
  -Werror
  #-Wconversion
  -Wno-unused-parameter
@@ -26,10 +24,9 @@ set(CXX_FLAGS
  -Wpointer-arith
  -Wshadow
  -Wwrite-strings
- #-march=native
- #-MMD
  -std=c++0x
  -fopenmp
+ -Wsign-compare -Wsign-conversion
  )
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
